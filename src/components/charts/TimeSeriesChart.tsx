@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+interface TimeSeriesData {
+  trend: number[];
+  seasonal: number[];
+  residual: number[];
+  adf_statistic: number;
+  adf_pvalue: number;
+  dates: string[];
+}
+
 interface TimeSeriesChartProps {
-  timeSeriesData: Record<string, {
-    trend: number[];
-    seasonal: number[];
-    residual: number[];
-    adf_statistic: number;
-    adf_pvalue: number;
-  }>;
+  timeSeriesData: Record<string, TimeSeriesData>;
 }
 
 const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ timeSeriesData }) => {
@@ -20,11 +23,20 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ timeSeriesData }) => 
 
   const currentSeries = timeSeriesData[selectedSeries];
 
-  const data = currentSeries.trend.map((value, index) => ({
-    index,
-    trend: value,
-    seasonal: currentSeries.seasonal[index],
-    residual: currentSeries.residual[index],
+  if (!currentSeries || !currentSeries.trend || !currentSeries.seasonal || !currentSeries.residual || !currentSeries.dates) {
+    return (
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-2">Time Series Analysis</h3>
+        <p>No valid time series data available for the selected series.</p>
+      </div>
+    );
+  }
+
+  const data = currentSeries.dates.map((date, index) => ({
+    date,
+    trend: currentSeries.trend[index] || 0,
+    seasonal: currentSeries.seasonal[index] || 0,
+    residual: currentSeries.residual[index] || 0,
   }));
 
   return (
@@ -46,7 +58,7 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ timeSeriesData }) => 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="index" />
+          <XAxis dataKey="date" />
           <YAxis />
           <Tooltip />
           <Legend />
@@ -56,13 +68,15 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ timeSeriesData }) => 
         </LineChart>
       </ResponsiveContainer>
       <div className="mt-4">
-        <p>ADF Statistic: {currentSeries.adf_statistic.toFixed(4)}</p>
-        <p>ADF p-value: {currentSeries.adf_pvalue.toFixed(4)}</p>
-        <p>
-          {currentSeries.adf_pvalue < 0.05
-            ? "The time series is stationary (suitable for forecasting models)."
-            : "The time series is non-stationary (consider differencing before modeling)."}
-        </p>
+        <p>ADF Statistic: {currentSeries.adf_statistic?.toFixed(4) ?? 'N/A'}</p>
+        <p>ADF p-value: {currentSeries.adf_pvalue?.toFixed(4) ?? 'N/A'}</p>
+        {currentSeries.adf_pvalue !== undefined && (
+          <p>
+            {currentSeries.adf_pvalue < 0.05
+              ? "The time series is stationary (suitable for forecasting models)."
+              : "The time series is non-stationary (consider differencing before modeling)."}
+          </p>
+        )}
       </div>
     </div>
   );

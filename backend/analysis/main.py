@@ -19,6 +19,7 @@ def analyze_data(df):
     perform_clustering = lazy_import('analysis.clustering', 'perform_clustering')
     analyze_time_series = lazy_import('analysis.time_series', 'analyze_time_series')
     detect_outliers = lazy_import('analysis.outlier_detection', 'detect_outliers')
+    summarize_outliers = lazy_import('analysis.outlier_detection', 'summarize_outliers')
     get_feature_importance = lazy_import('analysis.feature_importance', 'get_feature_importance')
     perform_regression_analysis = lazy_import('analysis.regression', 'perform_regression_analysis')
     generate_insights = lazy_import('analysis.utils', 'generate_insights')
@@ -55,9 +56,10 @@ def analyze_data(df):
     
     time_series_analysis = timed_execution(analyze_time_series, df)
     outliers = timed_execution(detect_outliers, df)
+    outlier_summary = timed_execution(summarize_outliers, outliers)
     feature_importance = timed_execution(get_feature_importance, df)
     regression_insights = timed_execution(perform_regression_analysis, df)
-    insights = timed_execution(generate_insights, df, summary, correlation, clusters, time_series_analysis, outliers, feature_importance, regression_insights)
+    insights = timed_execution(generate_insights, df, summary, correlation, clusters, time_series_analysis, outlier_summary, feature_importance, regression_insights)
     missing_values = df.isnull().sum().to_dict()
     
     recommended_visualizations = timed_execution(recommend_visualizations, df, column_types)
@@ -81,6 +83,7 @@ def analyze_data(df):
         "pca_explained_variance": pca_explained_variance,
         "general_statistics": general_statistics,
         "outliers": outliers,
+        "outlier_summary": outlier_summary,
         "feature_importance": feature_importance,
         "regression_insights": regression_insights
     }
