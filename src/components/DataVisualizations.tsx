@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import SummaryCharts from './charts/SummaryCharts';
-import CorrelationHeatmap from './charts/CorrelationHeatmap';
-import ScatterPlots from './charts/ScatterPlots';
-import AIInsights from './charts/AIInsights';
-import ClusteringChart from './charts/ClusteringChart';
-import TimeSeriesChart from './charts/TimeSeriesChart';
-import LineChart from './charts/LineChart';
-import PairwisePlots from './charts/PairwisePlots';
-import OutlierDetection from './charts/OutlierDetection';
-import BarChart from './charts/BarChart';
+import SummarySection from './visualizations/SummarySection';
+import CorrelationSection from './visualizations/CorrelationSection';
+import ClusteringSection from './visualizations/ClusteringSection';
+import TimeSeriesSection from './visualizations/TimeSeriesSection';
+import OutlierSection from './visualizations/OutlierSection';
+import FeatureImportanceSection from './visualizations/FeatureImportanceSection';
+import RegressionSection from './visualizations/RegressionSection';
+import BarChartSection from './visualizations/BarChartSection';
+import ScatterPlotSection from './visualizations/ScatterPlotSection';
+import PairwisePlotsSection from './visualizations/PairwisePlotsSection';
 import GeneralStatistics from './GeneralStatistics';
-import FeatureImportance from './charts/FeatureImportance';
-import RegressionInsights from './charts/RegressionInsights';
+import AIInsights from './charts/AIInsights';
 
 interface DataVisualizationsProps {
   data: {
@@ -61,112 +60,58 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
 
   if (!data || !data.summary) return null;
 
-  const { 
-    summary, 
-    column_types, 
-    correlation, 
-    top_correlations, 
-    pca_data, 
-    clusters, 
-    time_series_analysis, 
-    insights,
-    recommended_visualizations = [],
-    pca_result = [],
-    pca_explained_variance = [],
-    general_statistics,
-    outliers = {},
-    feature_importance = {},
-    regression_insights = {}
-  } = data;
-
-  const availableVisualizations = [
+  const baseVisualizations = [
     { value: 'summary', label: 'Summary Charts', description: 'Overview of key statistics for each variable' },
-    { value: 'correlation', label: 'Correlation Heatmap', description: 'Visualize relationships between variables' },
-    { value: 'scatter', label: 'Scatter Plot', description: 'Explore relationships between two variables' },
+    { value: 'correlation', label: 'Correlation Analysis', description: 'Visualize relationships between variables' },
     { value: 'clustering', label: 'Clustering', description: 'Identify groups within your data' },
     { value: 'timeseries', label: 'Time Series', description: 'Analyze patterns over time' },
-    { value: 'line', label: 'Line Chart', description: 'View trends across multiple variables' },
-    { value: 'pairwise', label: 'Pairwise Plots', description: 'Compare multiple variables simultaneously' },
     { value: 'outlier', label: 'Outlier Detection', description: 'Identify unusual data points' },
-    { value: 'bar', label: 'Bar Chart', description: 'Compare categories or groups' },
     { value: 'feature_importance', label: 'Feature Importance', description: 'See which variables have the most impact' },
     { value: 'regression', label: 'Regression Insights', description: 'Understand predictive relationships' },
-    ...recommended_visualizations.map(([_, label]) => ({ 
-      value: label.toLowerCase().replace(' ', '_'), 
-      label, 
-      description: 'AI-recommended visualization'
-    }))
+    { value: 'bar_chart', label: 'Bar Chart', description: 'Compare categories or groups' },
+    { value: 'scatter_plot', label: 'Scatter Plot', description: 'Explore relationships between two variables' },
+    { value: 'pairwise_plots', label: 'Pairwise Plots', description: 'Compare multiple variables simultaneously' },
   ];
 
+  const recommendedVisualizations = (data.recommended_visualizations || []).map(([_, label]) => ({ 
+    value: label.toLowerCase().replace(' ', '_'), 
+    label, 
+    description: 'AI-recommended visualization'
+  }));
+
+  const availableVisualizations = [
+    ...baseVisualizations,
+    ...recommendedVisualizations.filter(rec => !baseVisualizations.some(base => base.value === rec.value))
+  ];
   const renderVisualization = (chartType: string) => {
     switch(chartType) {
       case 'summary':
-        return <SummaryCharts summary={summary} />;
+        return <SummarySection summary={data.summary} />;
       case 'correlation':
-        return <CorrelationHeatmap correlation={correlation} />;
-      case 'scatter':
-        return <ScatterPlots topCorrelations={top_correlations} summary={summary} />;
+        return <CorrelationSection 
+          correlation={data.correlation} 
+          topCorrelations={data.top_correlations} 
+          summary={data.summary}
+        />;
       case 'clustering':
-        return <ClusteringChart pca_data={pca_data} clusters={clusters} summary={summary} />;
+        return <ClusteringSection pca_data={data.pca_data} clusters={data.clusters} summary={data.summary} />;
       case 'timeseries':
-        return <TimeSeriesChart timeSeriesData={time_series_analysis || {}} />;
-      case 'line':
-        return <LineChart data={getLineChartData()} columnTypes={column_types} xAxisLabel="Data Points" yAxisLabel="Values" />;
-      case 'pairwise':
-        return <PairwisePlots data={getNumericalData()} />;
+        return <TimeSeriesSection timeSeriesData={data.time_series_analysis || {}} />;
       case 'outlier':
-        return <OutlierDetection data={getNumericalData()} outliers={outliers} />;
-      case 'bar':
-        return <BarChart data={getCategoricalData()} />;
+        return <OutlierSection data={data.summary} outliers={data.outliers || {}} />;
       case 'feature_importance':
-        return <FeatureImportance data={feature_importance} />;
+        return <FeatureImportanceSection data={data.feature_importance || {}} />;
       case 'regression':
-        return <RegressionInsights data={regression_insights} />;
+        return <RegressionSection data={data.regression_insights || {}} />;
+      case 'bar_chart':
+        return <BarChartSection data={data.summary} />;
+      case 'scatter_plot':
+        return <ScatterPlotSection data={data.summary} />;
+      case 'pairwise_plots':
+        return <PairwisePlotsSection data={data.summary} />;
       default:
         return null;
     }
-  };
-
-  const getLineChartData = () => {
-    const chartData: Record<string, (number | string)[]> = {};
-    
-    Object.entries(summary).forEach(([colName, colData]) => {
-      if (colData.type === 'numerical') {
-        chartData[colName] = Object.values(colData).filter(val => typeof val === 'number');
-      } else if (colData.type === 'datetime') {
-        chartData[colName] = colData.values || [];
-      }
-    });
-
-    if (time_series_analysis) {
-      const timeSeriesColumn = Object.keys(time_series_analysis)[0];
-      if (timeSeriesColumn) {
-        chartData['Date'] = time_series_analysis[timeSeriesColumn].dates;
-        chartData[timeSeriesColumn] = time_series_analysis[timeSeriesColumn].trend;
-      }
-    }
-
-    return chartData;
-  };
-
-  const getNumericalData = () => {
-    const numericalData: Record<string, number[]> = {};
-    Object.entries(summary).forEach(([colName, colData]) => {
-      if (colData.type === 'numerical') {
-        numericalData[colName] = Object.values(colData).filter(val => typeof val === 'number');
-      }
-    });
-    return numericalData;
-  };
-
-  const getCategoricalData = () => {
-    const categoricalData: Record<string, Record<string, number>> = {};
-    Object.entries(summary).forEach(([colName, colData]) => {
-      if (colData.type === 'categorical') {
-        categoricalData[colName] = colData.top_values;
-      }
-    });
-    return categoricalData;
   };
 
   const handleVisualizationChange = (value: string) => {
@@ -180,7 +125,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
     <div className="mt-8 bg-white shadow-lg rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-6 text-indigo-800">Data Visualizations and AI Insights</h2>
       
-      <GeneralStatistics data={general_statistics} />
+      <GeneralStatistics data={data.general_statistics} />
       
       <div className="mb-6">
         <label htmlFor="visualization-select" className="block text-lg font-semibold text-indigo-800 mb-2">
@@ -218,16 +163,16 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
         )}
       </div>
 
-      {insights && insights.length > 0 && (
+      {data.insights && data.insights.length > 0 && (
         <div className="mt-8">
-          <AIInsights insights={insights} />
+          <AIInsights insights={data.insights} />
         </div>
       )}
 
-      {pca_explained_variance.length > 0 && (
+      {data.pca_explained_variance && data.pca_explained_variance.length > 0 && (
         <div className="mt-8 bg-indigo-50 p-6 rounded-lg">
           <h3 className="text-xl font-semibold mb-2 text-indigo-800">PCA Results</h3>
-          <p className="text-indigo-900">Explained Variance Ratio: {pca_explained_variance.map(v => v.toFixed(4)).join(', ')}</p>
+          <p className="text-indigo-900">Explained Variance Ratio: {data.pca_explained_variance.map(v => v.toFixed(4)).join(', ')}</p>
           <p className="text-indigo-700 mt-2">This indicates how much of the data's variance is explained by each principal component.</p>
         </div>
       )}
