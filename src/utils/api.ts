@@ -11,8 +11,14 @@ export async function uploadFile(file: File) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`File upload failed: ${response.status} ${response.statusText}. ${errorText}`);
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        errorMessage = errorBody.detail || errorMessage;
+      } catch (e) {
+        console.error('Error parsing error response:', e);
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();

@@ -40,11 +40,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
     } finally {
       setUploading(false);
     }
-
-    setFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   return (
@@ -75,8 +70,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
         </div>
         {file && <p className="mt-2 text-sm text-gray-500">Selected file: {file.name}</p>}
       </form>
-
-      {error && <p className="mt-4 text-red-500">{error}</p>}
+      {uploading && <p className="mt-4 text-blue-500">Uploading... This may take a moment.</p>}
+      {error && <p className="mt-4 text-red-500">Error: {error}</p>}
     </div>
   );
 };

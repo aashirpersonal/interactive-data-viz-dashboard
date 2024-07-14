@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
           <p>Upload your dataset to get started with automatic visualizations and AI-powered insights.</p>
         </div>
         <FileUpload onAnalysisComplete={handleAnalysisResult} />
-        {loading && <p className="mt-4 text-blue-500">Processing your data...</p>}
+        {loading && <p className="mt-4 text-blue-500">Processing your data... This may take a moment.</p>}
         {error && <p className="mt-4 text-red-500">Error: {error}</p>}
         {analysisResult && (
           <>
