@@ -40,11 +40,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
     } finally {
       setUploading(false);
     }
+
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} className="mt-5">
+    <div className="bg-gray-100 p-6 rounded-lg shadow-inner">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-center space-x-4">
           <input
             type="file"
@@ -56,22 +61,25 @@ const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
           <button
             type="button"
             onClick={handleUploadClick}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
           >
             Select Dataset
           </button>
           <button
             type="submit"
             disabled={!file || uploading}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition duration-150 ease-in-out"
           >
             {uploading ? 'Uploading...' : 'Upload'}
           </button>
         </div>
-        {file && <p className="mt-2 text-sm text-gray-500">Selected file: {file.name}</p>}
+        {file && (
+          <div className="text-sm text-gray-600 bg-white px-3 py-2 rounded-md">
+            Selected file: {file.name}
+          </div>
+        )}
       </form>
-      {uploading && <p className="mt-4 text-blue-500">Uploading... This may take a moment.</p>}
-      {error && <p className="mt-4 text-red-500">Error: {error}</p>}
+      {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
     </div>
   );
 };

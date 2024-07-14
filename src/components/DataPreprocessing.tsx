@@ -61,33 +61,33 @@ const DataPreprocessing: React.FC<DataPreprocessingProps> = ({ columns = [], mis
   }
 
   return (
-    <div className="mb-8 bg-white shadow rounded-lg p-6">
-      <h3 className="text-xl font-semibold mb-4">Data Preprocessing</h3>
+    <div className="mb-8 bg-white shadow-lg rounded-lg p-6">
+      <h3 className="text-xl font-semibold mb-4 text-indigo-800">Data Preprocessing</h3>
       <div className="mb-4">
         <input
           type="text"
           placeholder="Search columns..."
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
       <div className="mb-4 max-h-96 overflow-y-auto">
         {filteredColumns.map(column => (
-          <div key={column} className="mb-2 border-b pb-2">
+          <div key={column} className="mb-2 border-b border-gray-200 pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   checked={columnOptions[column]?.include}
                   onChange={() => handleColumnToggle(column)}
-                  className="mr-2"
+                  className="mr-2 form-checkbox h-5 w-5 text-indigo-600"
                 />
-                <span className="font-medium">{column}</span>
+                <span className="font-medium text-gray-700">{column}</span>
               </div>
               <button
                 onClick={() => toggleColumnExpand(column)}
-                className="text-blue-500 hover:text-blue-700"
+                className="text-indigo-600 hover:text-indigo-800 transition duration-150 ease-in-out"
               >
                 {expandedColumns.includes(column) ? 'Collapse' : 'Expand'}
               </button>
@@ -116,7 +116,7 @@ const DataPreprocessing: React.FC<DataPreprocessingProps> = ({ columns = [], mis
       </div>
       <button
         onClick={handlePreprocess}
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
       >
         Apply Preprocessing
       </button>

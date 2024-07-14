@@ -57,6 +57,7 @@ interface DataVisualizationsProps {
 
 const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
   const [selectedVisualization, setSelectedVisualization] = useState<string>('summary');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   if (!data || !data.summary) return null;
 
@@ -79,18 +80,22 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
   } = data;
 
   const availableVisualizations = [
-    { value: 'summary', label: 'Summary Charts' },
-    { value: 'correlation', label: 'Correlation Heatmap' },
-    { value: 'scatter', label: 'Scatter Plot' },
-    { value: 'clustering', label: 'Clustering' },
-    { value: 'timeseries', label: 'Time Series' },
-    { value: 'line', label: 'Line Chart' },
-    { value: 'pairwise', label: 'Pairwise Plots' },
-    { value: 'outlier', label: 'Outlier Detection' },
-    { value: 'bar', label: 'Bar Chart' },
-    { value: 'feature_importance', label: 'Feature Importance' },
-    { value: 'regression', label: 'Regression Insights' },
-    ...recommended_visualizations.map(([_, label]) => ({ value: label.toLowerCase().replace(' ', '_'), label }))
+    { value: 'summary', label: 'Summary Charts', description: 'Overview of key statistics for each variable' },
+    { value: 'correlation', label: 'Correlation Heatmap', description: 'Visualize relationships between variables' },
+    { value: 'scatter', label: 'Scatter Plot', description: 'Explore relationships between two variables' },
+    { value: 'clustering', label: 'Clustering', description: 'Identify groups within your data' },
+    { value: 'timeseries', label: 'Time Series', description: 'Analyze patterns over time' },
+    { value: 'line', label: 'Line Chart', description: 'View trends across multiple variables' },
+    { value: 'pairwise', label: 'Pairwise Plots', description: 'Compare multiple variables simultaneously' },
+    { value: 'outlier', label: 'Outlier Detection', description: 'Identify unusual data points' },
+    { value: 'bar', label: 'Bar Chart', description: 'Compare categories or groups' },
+    { value: 'feature_importance', label: 'Feature Importance', description: 'See which variables have the most impact' },
+    { value: 'regression', label: 'Regression Insights', description: 'Understand predictive relationships' },
+    ...recommended_visualizations.map(([_, label]) => ({ 
+      value: label.toLowerCase().replace(' ', '_'), 
+      label, 
+      description: 'AI-recommended visualization'
+    }))
   ];
 
   const renderVisualization = (chartType: string) => {
@@ -164,33 +169,66 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
     return categoricalData;
   };
 
+  const handleVisualizationChange = (value: string) => {
+    setIsLoading(true);
+    setSelectedVisualization(value);
+    // Simulate loading time for smoother transitions
+    setTimeout(() => setIsLoading(false), 500);
+  };
+
   return (
-    <div className="mt-8">
-      <h2 className="text-2xl font-bold mb-4">Data Visualizations and AI Insights</h2>
+    <div className="mt-8 bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-2xl font-bold mb-6 text-indigo-800">Data Visualizations and AI Insights</h2>
       
       <GeneralStatistics data={general_statistics} />
       
-      <div className="mb-4">
-        <select
-          value={selectedVisualization}
-          onChange={(e) => setSelectedVisualization(e.target.value)}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-        >
-          {availableVisualizations.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
+      <div className="mb-6">
+        <label htmlFor="visualization-select" className="block text-lg font-semibold text-indigo-800 mb-2">
+          Select Visualization
+        </label>
+        <div className="relative">
+          <select
+            id="visualization-select"
+            value={selectedVisualization}
+            onChange={(e) => handleVisualizationChange(e.target.value)}
+            className="block appearance-none w-full bg-indigo-100 border border-indigo-300 text-indigo-900 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500 transition duration-150 ease-in-out"
+          >
+            {availableVisualizations.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-indigo-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+            </svg>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-indigo-600">
+          {availableVisualizations.find(v => v.value === selectedVisualization)?.description}
+        </p>
       </div>
       
-      {renderVisualization(selectedVisualization)}
+      <div className="bg-gray-50 p-6 rounded-lg shadow-inner min-h-[400px] relative">
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500"></div>
+          </div>
+        ) : (
+          renderVisualization(selectedVisualization)
+        )}
+      </div>
 
-      {insights && insights.length > 0 && <AIInsights insights={insights} />}
+      {insights && insights.length > 0 && (
+        <div className="mt-8">
+          <AIInsights insights={insights} />
+        </div>
+      )}
 
       {pca_explained_variance.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-2">PCA Results</h3>
-          <p>Explained Variance Ratio: {pca_explained_variance.map(v => v.toFixed(4)).join(', ')}</p>
-          <p>This indicates how much of the data's variance is explained by each principal component.</p>
+        <div className="mt-8 bg-indigo-50 p-6 rounded-lg">
+          <h3 className="text-xl font-semibold mb-2 text-indigo-800">PCA Results</h3>
+          <p className="text-indigo-900">Explained Variance Ratio: {pca_explained_variance.map(v => v.toFixed(4)).join(', ')}</p>
+          <p className="text-indigo-700 mt-2">This indicates how much of the data's variance is explained by each principal component.</p>
         </div>
       )}
     </div>
