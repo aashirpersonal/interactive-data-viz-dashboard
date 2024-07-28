@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import FileUpload from './FileUpload';
 import DataVisualizations from './DataVisualizations';
 import DataPreprocessing from './DataPreprocessing';
-import { preprocessData, AnalysisResult } from '../utils/api';
+import { preprocessData, AnalysisResult, FileInfo } from '../utils/api';
 import ProgressBar from './ProgressBar';
 
 interface PreprocessingOptions {
@@ -14,6 +14,7 @@ interface PreprocessingOptions {
 }
 
 const Dashboard: React.FC = () => {
+  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,38 +34,23 @@ const Dashboard: React.FC = () => {
     setProgress(steps[stepIndex].percentage);
   };
 
-  const handleAnalysisResult = async (result: AnalysisResult) => {
-    setLoading(true);
+  const handleFileUpload = async (result: FileInfo) => {
+    setFileInfo(result);
+    setAnalysisResult(null);
     setError(null);
-    try {
-      updateProgress(0);  // Start with file upload
-      if ('error' in result) {
-        throw new Error(result.error as string);
-      }
-      updateProgress(1);  // Processing data
-      await new Promise(resolve => setTimeout(resolve, 1000));  // Simulate processing time
-      updateProgress(2);  // Performing analysis
-      await new Promise(resolve => setTimeout(resolve, 1000));  // Simulate analysis time
-      updateProgress(3);  // Generating visualizations
-      await new Promise(resolve => setTimeout(resolve, 1000));  // Simulate visualization generation time
-      updateProgress(4);  // Finalizing results
-      setAnalysisResult(result);
-    } catch (err) {
-      console.error('Error processing analysis result:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process the analysis result. Please try again.');
-    } finally {
-      setLoading(false);
-      setProgress(0);
-      setCurrentStep('');
-    }
   };
 
   const handlePreprocess = async (options: PreprocessingOptions) => {
+    if (!fileInfo) {
+      setError('No file uploaded. Please upload a file first.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       updateProgress(1);  // Start with processing data
-      const preprocessedData = await preprocessData(analysisResult!.filename, options);
+      const preprocessedData = await preprocessData(fileInfo.filename, options);
       updateProgress(2);  // Performing analysis
       await new Promise(resolve => setTimeout(resolve, 1000));  // Simulate analysis time
       updateProgress(3);  // Generating visualizations
@@ -72,7 +58,7 @@ const Dashboard: React.FC = () => {
       updateProgress(4);  // Finalizing results
       setAnalysisResult(preprocessedData);
     } catch (err) {
-      setError('Failed to preprocess data. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to preprocess data. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -88,7 +74,7 @@ const Dashboard: React.FC = () => {
         <div className="mb-6 text-gray-600">
           <p>Upload your dataset to get started with automatic visualizations and AI-powered insights.</p>
         </div>
-        <FileUpload onAnalysisComplete={handleAnalysisResult} />
+        <FileUpload onUploadComplete={handleFileUpload} />
         {loading && (
           <div className="mt-4">
             <ProgressBar progress={progress} />
@@ -96,14 +82,23 @@ const Dashboard: React.FC = () => {
           </div>
         )}
         {error && <p className="mt-4 text-red-600">Error: {error}</p>}
+        {fileInfo && (
+          <div className="mt-8">
+            <h3 className="text-xl font-semibold mb-4">File Information</h3>
+            <p>Filename: {fileInfo.filename}</p>
+            <p>Shape: {fileInfo.shape[0]} rows, {fileInfo.shape[1]} columns</p>
+            <p>Columns: {fileInfo.columns.join(', ')}</p>
+            <DataPreprocessing
+              columns={fileInfo.columns}
+              missingValues={fileInfo.missing_values}
+              columnTypes={fileInfo.dtypes}
+              onPreprocess={handlePreprocess}
+            />
+          </div>
+        )}
         {analysisResult && (
           <div className="mt-8">
             <p className="text-green-600 mb-4">Analysis complete. Rendering visualizations...</p>
-            <DataPreprocessing
-              columns={Object.keys(analysisResult.summary || {})}
-              missingValues={analysisResult.missing_values || {}}
-              onPreprocess={handlePreprocess}
-            />
             <DataVisualizations data={analysisResult} />
           </div>
         )}

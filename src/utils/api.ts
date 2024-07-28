@@ -1,6 +1,14 @@
 const API_URL = 'http://localhost:8000';
 
-export async function uploadFile(file: File) {
+export interface FileInfo {
+  filename: string;
+  shape: [number, number];
+  columns: string[];
+  dtypes: Record<string, string>;
+  missing_values: Record<string, number>;
+}
+
+export async function uploadFile(file: File): Promise<FileInfo> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -28,22 +36,31 @@ export async function uploadFile(file: File) {
   }
 }
 
-export async function preprocessData(filename: string, options: any) {
-  const response = await fetch(`${API_URL}/preprocess`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ filename, options }),
-  });
+export async function preprocessData(filename: string, options: any): Promise<AnalysisResult> {
+  try {
+    const requestBody = JSON.stringify({ filename, options });
+    console.log('Preprocessing request:', requestBody);
 
-  if (!response.ok) {
-    throw new Error('Data preprocessing failed');
+    const response = await fetch(`${API_URL}/preprocess`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Preprocessing error response:', errorData);
+      throw new Error(`Data preprocessing failed: ${JSON.stringify(errorData)}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Preprocessing error:', error);
+    throw error;
   }
-
-  return response.json();
 }
-
 export interface AnalysisResult {
   summary: Record<string, {
     type: 'numerical' | 'categorical' | 'datetime';

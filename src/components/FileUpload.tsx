@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { uploadFile } from '../utils/api';
+import { uploadFile, FileInfo } from '../utils/api';
 
 interface FileUploadProps {
-  onAnalysisComplete: (result: any) => void;
+  onUploadComplete: (result: FileInfo) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,9 +31,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onAnalysisComplete }) => {
 
     try {
       console.log('Uploading file:', file.name);
-      const data = await uploadFile(file);
-      console.log('Upload response:', data);
-      onAnalysisComplete(data);
+      const fileInfo = await uploadFile(file);
+      console.log('Upload response:', fileInfo);
+      onUploadComplete(fileInfo);
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
