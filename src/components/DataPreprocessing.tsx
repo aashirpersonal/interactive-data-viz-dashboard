@@ -10,6 +10,7 @@ interface DataPreprocessingProps {
 
 interface PreprocessingOptions {
   columnOptions: Record<string, ColumnOption>;
+  use_standard_scaler: boolean;
 }
 
 interface ColumnOption {
@@ -26,6 +27,7 @@ const DataPreprocessing: React.FC<DataPreprocessingProps> = ({ columns, missingV
   const [columnOptions, setColumnOptions] = useState<Record<string, ColumnOption>>({});
   const [expandedColumns, setExpandedColumns] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [useStandardScaler, setUseStandardScaler] = useState(false);
 
   useEffect(() => {
     const initialOptions = columns.reduce((acc, column) => {
@@ -49,7 +51,7 @@ const DataPreprocessing: React.FC<DataPreprocessingProps> = ({ columns, missingV
   };
 
   const handlePreprocess = () => {
-    onPreprocess({ columnOptions });
+    onPreprocess({ columnOptions, use_standard_scaler: useStandardScaler });
   };
 
   const toggleColumnExpand = (column: string) => {
@@ -164,6 +166,17 @@ const DataPreprocessing: React.FC<DataPreprocessingProps> = ({ columns, missingV
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+      </div>
+      <div className="mb-4">
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={useStandardScaler}
+            onChange={(e) => setUseStandardScaler(e.target.checked)}
+            className="form-checkbox h-5 w-5 text-indigo-600"
+          />
+          <span className="ml-2 text-gray-700">Use Standard Scaler</span>
+        </label>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">

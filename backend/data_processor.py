@@ -68,10 +68,10 @@ def preprocess_data(df: pd.DataFrame, preprocessing_options: dict) -> pd.DataFra
     transformers = []
 
     # Numeric transformer
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
-    ])
+    numeric_steps = [('imputer', SimpleImputer(strategy='mean'))]
+    if preprocessing_options.get('use_standard_scaler', False):
+        numeric_steps.append(('scaler', StandardScaler()))
+    numeric_transformer = Pipeline(steps=numeric_steps)
     transformers.append(('num', numeric_transformer, numeric_features))
 
     # One-hot encoding transformer
