@@ -45,7 +45,7 @@ interface DataVisualizationsProps {
       totalCells: number;
     };
     outliers?: Record<string, number[]>;
-    feature_importance?: Record<string, Record<string, number>>;
+    feature_importance?: Record<string, Record<string, number>> | null;
     regression_insights?: Record<string, {
       r2_score: number;
       mse: number;
@@ -63,22 +63,30 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
   const baseVisualizations = [
     { value: 'summary', label: 'Summary Charts', description: 'Overview of key statistics for each variable' },
     { value: 'correlation', label: 'Correlation Analysis', description: 'Visualize relationships between variables' },
-    { value: 'clustering', label: 'Clustering', description: 'Identify groups within your data' },
-    { value: 'timeseries', label: 'Time Series', description: 'Analyze patterns over time' },
-    { value: 'outlier', label: 'Outlier Detection', description: 'Identify unusual data points' },
-    { value: 'regression', label: 'Regression Insights', description: 'Understand predictive relationships' },
     { value: 'bar_chart', label: 'Bar Chart', description: 'Compare categories or groups' },
     { value: 'scatter_plot', label: 'Scatter Plot', description: 'Explore relationships between two variables' },
     { value: 'pairwise_plots', label: 'Pairwise Plots', description: 'Compare multiple variables simultaneously' },
   ];
 
-  // Only add feature importance if the data is available
+  // Conditionally add visualizations based on available data
+  if (data.pca_data && data.clusters) {
+    baseVisualizations.push({ value: 'clustering', label: 'Clustering', description: 'Identify groups within your data' });
+  }
+
+  if (Object.keys(data.time_series_analysis || {}).length > 0) {
+    baseVisualizations.push({ value: 'timeseries', label: 'Time Series', description: 'Analyze patterns over time' });
+  }
+
+  if (data.outliers && Object.keys(data.outliers).length > 0) {
+    baseVisualizations.push({ value: 'outlier', label: 'Outlier Detection', description: 'Identify unusual data points' });
+  }
+
   if (data.feature_importance) {
-    baseVisualizations.push({ 
-      value: 'feature_importance', 
-      label: 'Feature Importance', 
-      description: 'See which variables have the most impact' 
-    });
+    baseVisualizations.push({ value: 'feature_importance', label: 'Feature Importance', description: 'See which variables have the most impact' });
+  }
+
+  if (data.regression_insights && Object.keys(data.regression_insights).length > 0) {
+    baseVisualizations.push({ value: 'regression', label: 'Regression Insights', description: 'Understand predictive relationships' });
   }
 
   const recommendedVisualizations = (data.recommended_visualizations || []).map(([_, label]) => ({ 
@@ -103,15 +111,35 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
           summary={data.summary}
         />;
       case 'clustering':
-        return <ClusteringSection pca_data={data.pca_data} clusters={data.clusters} summary={data.summary} />;
+        return data.pca_data && data.clusters ? (
+          <ClusteringSection pca_data={data.pca_data} clusters={data.clusters} summary={data.summary} />
+        ) : (
+          <div className="text-gray-600">Clustering analysis is not available for the current dataset.</div>
+        );
       case 'timeseries':
-        return <TimeSeriesSection timeSeriesData={data.time_series_analysis || {}} />;
+        return Object.keys(data.time_series_analysis || {}).length > 0 ? (
+          <TimeSeriesSection timeSeriesData={data.time_series_analysis || {}} />
+        ) : (
+          <div className="text-gray-600">Time series analysis is not available for the current dataset.</div>
+        );
       case 'outlier':
-        return <OutlierSection data={data.summary} outliers={data.outliers || {}} />;
+        return data.outliers && Object.keys(data.outliers).length > 0 ? (
+          <OutlierSection data={data.summary} outliers={data.outliers} />
+        ) : (
+          <div className="text-gray-600">Outlier detection is not available for the current dataset.</div>
+        );
       case 'feature_importance':
-        return data.feature_importance ? <FeatureImportanceSection data={data.feature_importance} /> : null;
+        return data.feature_importance ? (
+          <FeatureImportanceSection data={data.feature_importance} />
+        ) : (
+          <div className="text-gray-600">Feature importance analysis is not available for the current dataset.</div>
+        );
       case 'regression':
-        return <RegressionSection data={data.regression_insights || {}} />;
+        return data.regression_insights && Object.keys(data.regression_insights).length > 0 ? (
+          <RegressionSection data={data.regression_insights} />
+        ) : (
+          <div className="text-gray-600">Regression analysis is not available for the current dataset.</div>
+        );
       case 'bar_chart':
         return <BarChartSection data={data.summary} />;
       case 'scatter_plot':
@@ -189,7 +217,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
       {!data.feature_importance && (
         <div className="mt-8 bg-yellow-50 p-6 rounded-lg">
           <h3 className="text-xl font-semibold mb-2 text-yellow-800">Feature Importance Not Available</h3>
-          <p className="text-yellow-700">Feature importance analysis was skipped due to the large size of the dataset (over 10,000 rows). This helps to ensure faster processing times for large datasets.</p>
+          <p className="text-yellow-700">Feature importance analysis was not performed. This could be due to the large size of the dataset (over 10,000 rows) or because numerical features were not included in the analysis.</p>
         </div>
       )}
     </div>

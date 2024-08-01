@@ -55,6 +55,18 @@ async def process_uploaded_file(file: UploadFile):
 
 def preprocess_data(df: pd.DataFrame, preprocessing_options: dict) -> pd.DataFrame:
     logger.info("Starting preprocessing")
+    
+    # Filter out columns that are not included
+    included_columns = [col for col, options in preprocessing_options['columnOptions'].items() if options['include']]
+    df = df[included_columns]
+    
+    logger.info(f"Columns after filtering: {df.columns.tolist()}")
+    
+    # If no further preprocessing is needed, return the filtered DataFrame
+    if not preprocessing_options.get('use_standard_scaler', False) and not any(options.get('fillMethod') != 'none' for options in preprocessing_options['columnOptions'].values()):
+        logger.info("No further preprocessing needed. Returning filtered DataFrame.")
+        return df
+
     numeric_features = df.select_dtypes(include=['int64', 'float64']).columns
     categorical_features = df.select_dtypes(include=['object']).columns
 
@@ -68,11 +80,14 @@ def preprocess_data(df: pd.DataFrame, preprocessing_options: dict) -> pd.DataFra
     transformers = []
 
     # Numeric transformer
-    numeric_steps = [('imputer', SimpleImputer(strategy='mean'))]
+    numeric_steps = []
+    if any(preprocessing_options['columnOptions'].get(col, {}).get('fillMethod') != 'none' for col in numeric_features):
+        numeric_steps.append(('imputer', SimpleImputer(strategy='mean')))
     if preprocessing_options.get('use_standard_scaler', False):
         numeric_steps.append(('scaler', StandardScaler()))
-    numeric_transformer = Pipeline(steps=numeric_steps)
-    transformers.append(('num', numeric_transformer, numeric_features))
+    if numeric_steps:
+        numeric_transformer = Pipeline(steps=numeric_steps)
+        transformers.append(('num', numeric_transformer, numeric_features))
 
     # One-hot encoding transformer
     if encode_columns:
@@ -81,6 +96,11 @@ def preprocess_data(df: pd.DataFrame, preprocessing_options: dict) -> pd.DataFra
             ('onehot', OneHotEncoder(handle_unknown='ignore'))
         ])
         transformers.append(('cat', categorical_transformer, encode_columns))
+
+    # If no transformers, return the filtered DataFrame
+    if not transformers:
+        logger.info("No transformations needed. Returning filtered DataFrame.")
+        return df
 
     # Create the ColumnTransformer
     preprocessor = ColumnTransformer(transformers=transformers)
@@ -110,12 +130,13 @@ def preprocess_data(df: pd.DataFrame, preprocessing_options: dict) -> pd.DataFra
         for col in keep_categorical:
             result_df[col] = df[col]
 
-        logger.info("Preprocessing complete")
+        logger.info(f"Preprocessing complete. Final columns: {result_df.columns.tolist()}")
         return result_df
 
     except Exception as e:
         logger.error(f"Error during preprocessing: {str(e)}", exc_info=True)
         raise
+
 async def process_preprocessing_request(filename: str, options: dict):
     try:
         logger.info(f"Processing preprocessing request for file: {filename}")
@@ -127,15 +148,10 @@ async def process_preprocessing_request(filename: str, options: dict):
         df = pd.read_csv(file_path)
         logger.info(f"Data loaded. Shape: {df.shape}")
 
-        # Check if preprocessing is necessary
-        if not df.isnull().values.any() and all(option['fillMethod'] == 'none' for option in options['columnOptions'].values()):
-            logger.info("No preprocessing needed. Skipping preprocessing step.")
-            preprocessed_df = df
-        else:
-            # Apply preprocessing
-            logger.info("Applying preprocessing")
-            preprocessed_df = preprocess_data(df, options)
-            logger.info(f"Preprocessing complete. New shape: {preprocessed_df.shape}")
+        # Apply preprocessing (including column filtering)
+        logger.info("Applying preprocessing")
+        preprocessed_df = preprocess_data(df, options)
+        logger.info(f"Preprocessing complete. New shape: {preprocessed_df.shape}")
 
         # Perform analysis on preprocessed data
         logger.info("Performing analysis on preprocessed data")

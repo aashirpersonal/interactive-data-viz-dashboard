@@ -1,6 +1,9 @@
 import importlib
 import time
 from multiprocessing import Pool
+import logging
+
+logger = logging.getLogger(__name__)
 
 def lazy_import(module_name, function_name):
     module = importlib.import_module(module_name)
@@ -25,12 +28,13 @@ def analyze_data(df):
     generate_insights = lazy_import('analysis.utils', 'generate_insights')
     recommend_visualizations = lazy_import('analysis.utils', 'recommend_visualizations')
 
-    print(f"Imports took {time.time() - start_time:.2f} seconds")
+    logger.info(f"Imports took {time.time() - start_time:.2f} seconds")
+    logger.info(f"Analyzing data with columns: {df.columns.tolist()}")
 
     def timed_execution(func, *args, **kwargs):
         start = time.time()
         result = func(*args, **kwargs)
-        print(f"{func.__name__} took {time.time() - start:.2f} seconds")
+        logger.info(f"{func.__name__} took {time.time() - start:.2f} seconds")
         return result
 
     # Run some analyses in parallel
@@ -59,19 +63,17 @@ def analyze_data(df):
     outlier_summary = timed_execution(summarize_outliers, outliers)
     
     # Skip feature importance analysis for datasets with more than 10,000 rows
-    if len(df) <= 8000:
+    feature_importance = None
+    if len(df) <= 10000:
         feature_importance = timed_execution(get_feature_importance, df)
-    else:
-        feature_importance = None
     
     regression_insights = timed_execution(perform_regression_analysis, df)
     insights = timed_execution(generate_insights, df, summary, correlation, clusters, time_series_analysis, outlier_summary, feature_importance, regression_insights)
     missing_values = df.isnull().sum().to_dict()
     
     recommended_visualizations = timed_execution(recommend_visualizations, df, column_types)
-    important_features = feature_importance  # This might be None for large datasets
 
-    print(f"Total analysis took {time.time() - start_time:.2f} seconds")
+    logger.info(f"Total analysis took {time.time() - start_time:.2f} seconds")
     
     return {
         "summary": summary,
@@ -84,7 +86,6 @@ def analyze_data(df):
         "insights": insights,
         "missing_values": missing_values,
         "recommended_visualizations": recommended_visualizations,
-        "important_features": important_features,
         "pca_result": pca_data,
         "pca_explained_variance": pca_explained_variance,
         "general_statistics": general_statistics,
