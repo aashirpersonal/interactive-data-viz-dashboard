@@ -42,19 +42,23 @@ def generate_insights(df, summary, correlation, clusters, time_series_analysis, 
             insights.append(f"{column} contains {outlier_count} potential outliers ({percentage:.2f}% of the data). These outliers might represent anomalies, errors, or interesting edge cases worth investigating.")
     
     # Feature importance insights
-    for target, importances in feature_importance.items():
-        top_features = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:3]
-        features_str = ", ".join([f"{feature} ({importance:.3f})" for feature, importance in top_features])
-        insights.append(f"For predicting {target}, the most important features are: {features_str}. Focus on these features for feature engineering or when building predictive models.")
+    if feature_importance is not None:
+        for target, importances in feature_importance.items():
+            top_features = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:3]
+            features_str = ", ".join([f"{feature} ({importance:.3f})" for feature, importance in top_features])
+            insights.append(f"For predicting {target}, the most important features are: {features_str}. Focus on these features for feature engineering or when building predictive models.")
+    else:
+        insights.append("Feature importance analysis was skipped due to the large size of the dataset (over 10,000 rows). This helps to ensure faster processing times for large datasets.")
     
     # Regression insights
-    for target, results in regression_insights.items():
-        if results['r2_score'] > 0.7:
-            insights.append(f"The linear regression model for {target} shows a strong fit (R² = {results['r2_score']:.2f}). This suggests that the selected features are good predictors for {target}.")
-        elif results['r2_score'] > 0.5:
-            insights.append(f"The linear regression model for {target} shows a moderate fit (R² = {results['r2_score']:.2f}). There might be room for improvement by including non-linear relationships or additional features.")
-        else:
-            insights.append(f"The linear regression model for {target} shows a weak fit (R² = {results['r2_score']:.2f}). Consider exploring non-linear models or gathering additional relevant features to improve predictive power.")
+    if regression_insights:
+        for target, results in regression_insights.items():
+            if results['r2_score'] > 0.7:
+                insights.append(f"The linear regression model for {target} shows a strong fit (R² = {results['r2_score']:.2f}). This suggests that the selected features are good predictors for {target}.")
+            elif results['r2_score'] > 0.5:
+                insights.append(f"The linear regression model for {target} shows a moderate fit (R² = {results['r2_score']:.2f}). There might be room for improvement by including non-linear relationships or additional features.")
+            else:
+                insights.append(f"The linear regression model for {target} shows a weak fit (R² = {results['r2_score']:.2f}). Consider exploring non-linear models or gathering additional relevant features to improve predictive power.")
     
     return insights
 

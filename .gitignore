@@ -36,3 +36,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /backend/uploaded_files
+/backend/uploaded_files

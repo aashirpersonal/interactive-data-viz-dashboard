@@ -57,13 +57,19 @@ def analyze_data(df):
     time_series_analysis = timed_execution(analyze_time_series, df)
     outliers = timed_execution(detect_outliers, df)
     outlier_summary = timed_execution(summarize_outliers, outliers)
-    feature_importance = timed_execution(get_feature_importance, df)
+    
+    # Skip feature importance analysis for datasets with more than 10,000 rows
+    if len(df) <= 8000:
+        feature_importance = timed_execution(get_feature_importance, df)
+    else:
+        feature_importance = None
+    
     regression_insights = timed_execution(perform_regression_analysis, df)
     insights = timed_execution(generate_insights, df, summary, correlation, clusters, time_series_analysis, outlier_summary, feature_importance, regression_insights)
     missing_values = df.isnull().sum().to_dict()
     
     recommended_visualizations = timed_execution(recommend_visualizations, df, column_types)
-    important_features = feature_importance  # This is already calculated
+    important_features = feature_importance  # This might be None for large datasets
 
     print(f"Total analysis took {time.time() - start_time:.2f} seconds")
     

@@ -54,6 +54,13 @@ const AIInsights: React.FC<AIInsightsProps> = ({ insights }) => {
           </div>
         ))}
       </div>
+      {!categorizedInsights['Feature Importance'] && (
+        <div className="px-4 py-5 sm:p-6 bg-yellow-50">
+          <p className="text-sm text-yellow-700">
+            Note: Feature importance analysis was not performed due to the large size of the dataset (over 10,000 rows).
+          </p>
+        </div>
+      )}
     </div>
   );
 };

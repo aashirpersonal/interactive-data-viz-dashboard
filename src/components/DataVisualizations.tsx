@@ -66,12 +66,20 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
     { value: 'clustering', label: 'Clustering', description: 'Identify groups within your data' },
     { value: 'timeseries', label: 'Time Series', description: 'Analyze patterns over time' },
     { value: 'outlier', label: 'Outlier Detection', description: 'Identify unusual data points' },
-    { value: 'feature_importance', label: 'Feature Importance', description: 'See which variables have the most impact' },
     { value: 'regression', label: 'Regression Insights', description: 'Understand predictive relationships' },
     { value: 'bar_chart', label: 'Bar Chart', description: 'Compare categories or groups' },
     { value: 'scatter_plot', label: 'Scatter Plot', description: 'Explore relationships between two variables' },
     { value: 'pairwise_plots', label: 'Pairwise Plots', description: 'Compare multiple variables simultaneously' },
   ];
+
+  // Only add feature importance if the data is available
+  if (data.feature_importance) {
+    baseVisualizations.push({ 
+      value: 'feature_importance', 
+      label: 'Feature Importance', 
+      description: 'See which variables have the most impact' 
+    });
+  }
 
   const recommendedVisualizations = (data.recommended_visualizations || []).map(([_, label]) => ({ 
     value: label.toLowerCase().replace(' ', '_'), 
@@ -83,6 +91,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
     ...baseVisualizations,
     ...recommendedVisualizations.filter(rec => !baseVisualizations.some(base => base.value === rec.value))
   ];
+
   const renderVisualization = (chartType: string) => {
     switch(chartType) {
       case 'summary':
@@ -100,7 +109,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
       case 'outlier':
         return <OutlierSection data={data.summary} outliers={data.outliers || {}} />;
       case 'feature_importance':
-        return <FeatureImportanceSection data={data.feature_importance || {}} />;
+        return data.feature_importance ? <FeatureImportanceSection data={data.feature_importance} /> : null;
       case 'regression':
         return <RegressionSection data={data.regression_insights || {}} />;
       case 'bar_chart':
@@ -174,6 +183,13 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ data }) => {
           <h3 className="text-xl font-semibold mb-2 text-indigo-800">PCA Results</h3>
           <p className="text-indigo-900">Explained Variance Ratio: {data.pca_explained_variance.map(v => v.toFixed(4)).join(', ')}</p>
           <p className="text-indigo-700 mt-2">This indicates how much of the data's variance is explained by each principal component.</p>
+        </div>
+      )}
+
+      {!data.feature_importance && (
+        <div className="mt-8 bg-yellow-50 p-6 rounded-lg">
+          <h3 className="text-xl font-semibold mb-2 text-yellow-800">Feature Importance Not Available</h3>
+          <p className="text-yellow-700">Feature importance analysis was skipped due to the large size of the dataset (over 10,000 rows). This helps to ensure faster processing times for large datasets.</p>
         </div>
       )}
     </div>

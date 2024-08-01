@@ -94,7 +94,7 @@ export interface AnalysisResult {
     totalCells: number;
   };
   outliers?: Record<string, number[]>;
-  feature_importance?: Record<string, Record<string, number>>;
+  feature_importance?: Record<string, Record<string, number>> | null;
   regression_insights?: Record<string, {
     r2_score: number;
     mse: number;
